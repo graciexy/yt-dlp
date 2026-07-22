@@ -1,0 +1,39 @@
+name: Extract Video Subtitles
+
+on:
+  workflow_dispatch:
+    inputs:
+      video_url:
+        description: '视频链接 (支持 YouTube, B站等)'
+        required: true
+        type: string
+        default: 'https://www.youtube.com/watch?v=your_video_id'
+
+jobs:
+  extract-subs:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup yt-dlp
+        uses: AnimMouse/setup-yt-dlp@v3
+
+      - name: Create cookies file from secret
+        run: |
+          echo "${{ secrets.YT_COOKIES }}" > cookies.txt
+
+      - name: Download subtitles
+        run: |
+          yt-dlp --cookies cookies.txt \
+                 --write-auto-subs \
+                 --sub-lang en \
+                 --skip-download \
+                 --sub-format vtt \
+                 "${{ github.event.inputs.video_url }}"
+
+      - name: Upload subtitle file
+        uses: actions/upload-artifact@v4
+        with:
+          name: subtitle-file
+          path: ./*.vtt
